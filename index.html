@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Burn Wallet Live</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; line-height: 1.35; }
+    .card { max-width: 860px; border: 1px solid #ddd; border-radius: 12px; padding: 16px; }
+    .row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; }
+    .kpi { flex: 1 1 220px; border: 1px solid #eee; border-radius: 12px; padding: 12px; }
+    .label { font-size: 12px; color: #555; }
+    .value { font-size: 20px; font-weight: 700; margin-top: 6px; word-break: break-all; }
+    .muted { color: #666; font-size: 12px; }
+    .warn { color: #8a4b00; }
+    a { color: inherit; }
+    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2 style="margin:0 0 6px 0;">Burn Wallet Live</h2>
+    <div class="muted">
+      Read-only dashboard. Polling-based updates. No wallet connect. No admin controls.
+    </div>
+
+    <div class="row">
+      <div class="kpi">
+        <div class="label">Burn wallet</div>
+        <div class="value" id="burnWallet"></div>
+        <div class="muted"><a id="walletLink" target="_blank" rel="noreferrer">View on Solscan</a></div>
+      </div>
+      <div class="kpi">
+        <div class="label">Token mint</div>
+        <div class="value" id="tokenMint"></div>
+        <div class="muted"><a id="mintLink" target="_blank" rel="noreferrer">View mint on Solscan</a></div>
+      </div>
+      <div class="kpi">
+        <div class="label">Balance in burn wallet</div>
+        <div class="value" id="balance">—</div>
+        <div class="muted">Last updated: <span id="updated">—</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px" class="muted">
+      Status: <span id="status">Initializing…</span>
+      <span id="rateNote" class="warn"></span>
+    </div>
+
+    <hr style="border:none;border-top:1px solid #eee;margin:14px 0;">
+
+    <div class="muted">
+      Config:
+      <div>RPC: <code id="rpc"></code></div>
+      <div>Refresh: <code id="refresh"></code></div>
+    </div>
+  </div>
+
+<script>
+/**
+ * === OPTION 1 (FREE) CONFIG ===
+ * Public RPC + slower polling to reduce rate limits.
+ */
+const RPC_HTTP = "https://api.mainnet-beta.solana.com";
+const BURN_WALLET = "1nc1nerator11111111111111111111111111111111";
+const TOKEN_MINT  = "At4L287tND4vLSURFeVz2fqhbvNgnE76nfFg7gy9pump";
+const POLL_MS     = 20000; // 20s is safer on free public RPC
+const EXPLORER_BASE = "https://solscan.io";
+
+/**
+ * JSON-RPC helper
+ */
+async function rpc(method, params) {
+  const res = await fetch(RPC_HTTP, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
+  });
+  if (!res.ok) throw new Error(`RPC HTTP ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || "RPC error");
+  return data.result;
+}
+
+/**
+ * Fetch burn wallet token balance (sum of all token accounts for this mint).
+ * Uses getTokenAccountsByOwner with mint filter.
+ */
+async function fetchBurnBalance() {
+  const result = await rpc("getTokenAccountsByOwner", [
+    BURN_WALLET,
+    { mint: TOKEN_MINT },
+    { encoding: "jsonParsed" }
+  ]);
+
+  let totalUi = 0;
+  const accounts = result?.value || [];
+  for (const acc of accounts) {
+    const parsed = acc?.account?.data?.parsed;
+    const uiAmt = parsed?.info?.tokenAmount?.uiAmount;
+    if (typeof uiAmt === "number") totalUi += uiAmt;
+  }
+  return { totalUi, accountsCount: accounts.length };
+}
+
+function fmt(n) {
+  if (n === 0) return "0";
+  if (n >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (n >= 1) return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  return n.toLocaleString(undefined, { maximumFractionDigits: 8 });
+}
+
+function setText(id, v) { document.getElementById(id).textContent = v; }
+
+async function tick() {
+  const status = document.getElementById("status");
+  const rateNote = document.getElementById("rateNote");
+  try {
+    status.textContent = "Fetching…";
+    rateNote.textContent = "";
+
+    const { totalUi, accountsCount } = await fetchBurnBalance();
+
+    setText("balance", fmt(totalUi));
+    setText("updated", new Date().toLocaleString());
+    status.textContent = `OK (token accounts: ${accountsCount})`;
+  } catch (e) {
+    status.textContent = `Error: ${e.message}`;
+    if (String(e.message).includes("429")) {
+      rateNote.textContent = " Rate-limited. Increase refresh interval (POLL_MS) to 30–60s.";
+    }
+  }
+}
+
+(function init(){
+  setText("burnWallet", BURN_WALLET);
+  setText("tokenMint", TOKEN_MINT);
+  document.getElementById("walletLink").href = `${EXPLORER_BASE}/account/${BURN_WALLET}`;
+  document.getElementById("mintLink").href = `${EXPLORER_BASE}/token/${TOKEN_MINT}`;
+  setText("rpc", RPC_HTTP);
+  setText("refresh", `${Math.round(POLL_MS/1000)}s`);
+
+  tick();
+  setInterval(tick, POLL_MS);
+})();
+</script>
+</body>
+</html>
