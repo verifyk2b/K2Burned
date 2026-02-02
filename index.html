@@ -3,140 +3,296 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Burn Wallet Live</title>
+  <title>K2B Burn Verification</title>
+  <meta name="description" content="K2B burn verification hub. Daily snapshot + direct on-chain verification links." />
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; line-height: 1.35; }
-    .card { max-width: 860px; border: 1px solid #ddd; border-radius: 12px; padding: 16px; }
-    .row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; }
-    .kpi { flex: 1 1 220px; border: 1px solid #eee; border-radius: 12px; padding: 12px; }
-    .label { font-size: 12px; color: #555; }
-    .value { font-size: 20px; font-weight: 700; margin-top: 6px; word-break: break-all; }
-    .muted { color: #666; font-size: 12px; }
-    .warn { color: #8a4b00; }
-    a { color: inherit; }
-    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+    :root{
+      --bg:#0b0d10;
+      --card:#12161c;
+      --muted:#9aa4b2;
+      --text:#e8eef5;
+      --line:rgba(255,255,255,.09);
+      --accent:#c9a227;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background: radial-gradient(1200px 700px at 20% -10%, rgba(201,162,39,.16), transparent 55%),
+                  radial-gradient(900px 600px at 110% 10%, rgba(110,231,183,.10), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.45;
+    }
+    a{color:inherit}
+    .wrap{max-width:980px; margin:0 auto; padding:22px 16px 46px}
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px; padding:10px 0 18px;
+    }
+    .brand{display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.4px;}
+    .badge{
+      width:38px; height:38px; border-radius:12px;
+      background: linear-gradient(135deg, rgba(201,162,39,.85), rgba(201,162,39,.25));
+      border:1px solid rgba(201,162,39,.35);
+      box-shadow: var(--shadow);
+      display:grid; place-items:center; font-weight:900;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      padding:9px 12px; border-radius:999px;
+      color:var(--muted); font-size:13px;
+    }
+    .hero{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      padding:18px 16px;
+      box-shadow: var(--shadow);
+    }
+    h1{margin:0 0 8px; font-size:26px}
+    .sub{color:var(--muted); font-size:14px; margin:0 0 14px}
+    .tagline{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:12px;}
+    .tag{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(201,162,39,.30);
+      background: rgba(201,162,39,.08);
+      font-weight:800;
+    }
+    .tag small{font-weight:700; color:rgba(232,238,245,.85)}
+    .grid{display:grid; grid-template-columns:1fr; gap:14px; margin-top:14px;}
+    @media(min-width:860px){ .grid{grid-template-columns: 1.2fr .8fr} }
+    .card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      padding:14px;
+      box-shadow: var(--shadow);
+    }
+    .card h2{margin:0 0 10px; font-size:16px}
+    .rowbox{
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+      border-radius:14px;
+      padding:12px;
+      margin-top:10px;
+    }
+    .label{font-size:12px; color:var(--muted); margin-bottom:6px}
+    .value{font-size:15px; font-weight:800; word-break:break-all}
+    .btns{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:11px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color:var(--text);
+      font-weight:800;
+      font-size:14px;
+      min-width: 190px;
+      text-decoration:none;
+    }
+    .btn.primary{border:1px solid rgba(201,162,39,.35); background: rgba(201,162,39,.14);}
+    .btn:hover{filter:brightness(1.07)}
+    .muted{color:var(--muted); font-size:13px}
+    .divider{height:1px; background: var(--line); margin:12px 0}
+    .steps{margin:0; padding-left:18px; color:rgba(232,238,245,.92)}
+    .steps li{margin:8px 0}
+    code{
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      padding:2px 6px;
+      border-radius:10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+    }
+    .footer{
+      margin-top:14px;
+      color:var(--muted);
+      font-size:12px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      border-radius: var(--radius);
+      padding:12px 14px;
+    }
+    .kpi{
+      display:grid; gap:8px;
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+      border-radius:14px;
+      padding:12px;
+    }
+    .big{
+      font-size:26px; font-weight:900;
+      letter-spacing:.2px;
+    }
+    .ok{color:#86efac}
+    .bad{color:#fca5a5}
   </style>
 </head>
+
 <body>
-  <div class="card">
-    <h2 style="margin:0 0 6px 0;">Burn Wallet Live</h2>
-    <div class="muted">
-      Read-only dashboard. Polling-based updates. No wallet connect. No admin controls.
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="badge">K2B</div>
+        <div>
+          <div style="font-size:14px; font-weight:900;">K2B Burn Verification</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:2px;">Verification over promises</div>
+        </div>
+      </div>
+      <div class="pill">Read-only • No wallet connect • No admin controls</div>
     </div>
 
-    <div class="row">
-      <div class="kpi">
-        <div class="label">Burn wallet</div>
-        <div class="value" id="burnWallet">—</div>
-        <div class="muted"><a id="walletLink" target="_blank" rel="noreferrer">View on Solscan</a></div>
-      </div>
-      <div class="kpi">
-        <div class="label">Token mint</div>
-        <div class="value" id="tokenMint">—</div>
-        <div class="muted"><a id="mintLink" target="_blank" rel="noreferrer">View mint on Solscan</a></div>
-      </div>
-      <div class="kpi">
-        <div class="label">Balance in burn wallet</div>
-        <div class="value" id="balance">—</div>
-        <div class="muted">Last updated: <span id="updated">—</span></div>
+    <div class="hero">
+      <h1>Buy Bricks. Burn Krumbs.</h1>
+      <p class="sub">
+        This page shows a <strong>daily automated snapshot</strong> of the burn wallet, and links directly to on-chain explorers for independent verification.
+      </p>
+      <div class="tagline">
+        <div class="tag">No Rules. <small>Just Choices.</small></div>
+        <div class="pill">Grassroots-only • Community-driven • Fully voluntary</div>
       </div>
     </div>
 
-    <div style="margin-top:14px" class="muted">
-      Status: <span id="status">Initializing…</span>
-      <span id="rateNote" class="warn"></span>
+    <div class="grid">
+      <!-- LEFT: Snapshot + Links -->
+      <div class="card">
+        <h2>Burn wallet snapshot (daily)</h2>
+
+        <div class="kpi">
+          <div class="label">K2B balance in burn wallet</div>
+          <div class="big" id="balance">—</div>
+          <div class="muted">
+            Last updated: <span id="updated">—</span> • Status: <span id="status">Loading…</span>
+          </div>
+          <div class="muted" id="why" style="display:none;"></div>
+        </div>
+
+        <div class="rowbox">
+          <div class="label">Burn wallet</div>
+          <div class="value" id="burnWalletText">—</div>
+          <div class="btns">
+            <a class="btn primary" id="burnSolscan" target="_blank" rel="noreferrer">View burn wallet on Solscan →</a>
+            <a class="btn" id="burnTokens" target="_blank" rel="noreferrer">View wallet tokens list →</a>
+          </div>
+        </div>
+
+        <div class="rowbox">
+          <div class="label">Token mint</div>
+          <div class="value" id="mintText">—</div>
+          <div class="btns">
+            <a class="btn primary" id="mintSolscan" target="_blank" rel="noreferrer">View token mint on Solscan →</a>
+            <a class="btn" id="mintTxs" target="_blank" rel="noreferrer">View token transactions →</a>
+          </div>
+        </div>
+
+        <div class="muted" style="margin-top:10px;">
+          This snapshot is generated automatically once per day to avoid browser RPC/CORS restrictions. The explorer remains the source of truth.
+        </div>
+      </div>
+
+      <!-- RIGHT: How to verify + Share -->
+      <div class="card">
+        <h2>How to verify burns</h2>
+        <ol class="steps">
+          <li>Open the <strong>burn wallet</strong> link.</li>
+          <li>On Solscan, check <strong>Tokens</strong> / <strong>Token Accounts</strong>.</li>
+          <li>Find mint: <code id="mintCode">—</code></li>
+          <li>Verify balance + transactions directly on-chain.</li>
+        </ol>
+
+        <div class="divider"></div>
+
+        <h2>Participation posture</h2>
+        <p class="muted" style="margin:0;">
+          Burning is voluntary. Holding is voluntary. No incentives. No enforcement. No promises. Verification is the responsibility of the buyer.
+        </p>
+
+        <div class="divider"></div>
+
+        <h2>Share block</h2>
+        <div class="rowbox">
+          <div class="label">Link</div>
+          <div class="value" id="siteLink">—</div>
+          <div class="divider"></div>
+          <div class="label">Tag</div>
+          <div class="value">Buy Bricks. Burn Krumbs.<br/>No Rules. Just Choices.</div>
+        </div>
+      </div>
     </div>
 
-    <hr style="border:none;border-top:1px solid #eee;margin:14px 0;">
-
-    <div class="muted">
-      Config:
-      <div>Data: <code id="rpc">—</code></div>
-      <div>Refresh: <code id="refresh">—</code></div>
+    <div class="footer">
+      <div><strong>Disclaimer:</strong> No guarantees. No promises. This page is informational and links to public blockchain explorers. Always verify independently.</div>
     </div>
   </div>
 
 <script>
-/**
- * === CONFIG ===
- * Mint: K2B
- * Burn wallet: Solana Incinerator
- */
-const BURN_WALLET = "1nc1nerator11111111111111111111111111111111";
-const TOKEN_MINT  = "At4L287tND4vLSURFeVz2fqhbvNgnE76nfFg7gy9pump";
-const POLL_MS     = 20000; // 20s
-const EXPLORER_BASE = "https://solscan.io";
+  // === CONFIG (K2B) ===
+  const BURN_WALLET = "1nc1nerator11111111111111111111111111111111";
+  const TOKEN_MINT  = "At4L287tND4vLSURFeVz2fqhbvNgnE76nfFg7gy9pump";
+  const SOLSCAN     = "https://solscan.io";
 
-/**
- * If anything breaks, show the error on the page (mobile-friendly).
- */
-window.addEventListener("error", (e) => {
-  const status = document.getElementById("status");
-  if (status) status.textContent = `JS Error: ${e.message}`;
-});
+  // Populate addresses
+  document.getElementById("burnWalletText").textContent = BURN_WALLET;
+  document.getElementById("mintText").textContent = TOKEN_MINT;
+  document.getElementById("mintCode").textContent = TOKEN_MINT;
 
-/**
- * Browser-safe fetch via CORS proxy -> Solscan public API.
- */
-async function fetchBurnBalance() {
-  const targetUrl = `https://public-api.solscan.io/account/tokens?account=${BURN_WALLET}`;
-  const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+  // Links
+  document.getElementById("burnSolscan").href = `${SOLSCAN}/account/${BURN_WALLET}`;
+  document.getElementById("burnTokens").href  = `${SOLSCAN}/account/${BURN_WALLET}#tokens`;
+  document.getElementById("mintSolscan").href = `${SOLSCAN}/token/${TOKEN_MINT}`;
+  document.getElementById("mintTxs").href     = `${SOLSCAN}/token/${TOKEN_MINT}#transactions`;
 
-  const res = await fetch(proxyUrl);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  // Site link display
+  const site = window.location.origin + window.location.pathname;
+  document.getElementById("siteLink").textContent = site;
 
-  const data = await res.json();
+  // Load daily snapshot from your own repo output: burn.json
+  async function loadSnapshot(){
+    const statusEl = document.getElementById("status");
+    const updatedEl = document.getElementById("updated");
+    const balanceEl = document.getElementById("balance");
+    const whyEl = document.getElementById("why");
 
-  let totalUi = 0;
-  let accountsCount = 0;
+    try{
+      statusEl.textContent = "Loading…";
+      const res = await fetch("./burn.json?v=" + Date.now());
+      if(!res.ok) throw new Error(`burn.json HTTP ${res.status}`);
 
-  for (const t of data) {
-    if (t && t.tokenAddress === TOKEN_MINT) {
-      totalUi += Number(t.tokenAmount?.uiAmount || 0);
-      accountsCount++;
+      const data = await res.json();
+
+      if(data.ok){
+        balanceEl.textContent = String(data.balanceUi ?? "0");
+        updatedEl.textContent = data.updatedAt || "—";
+        statusEl.textContent = "OK";
+        statusEl.className = "ok";
+        whyEl.style.display = "none";
+      } else {
+        balanceEl.textContent = "—";
+        updatedEl.textContent = data.updatedAt || "—";
+        statusEl.textContent = "ERROR";
+        statusEl.className = "bad";
+        whyEl.style.display = "block";
+        whyEl.textContent = "Snapshot job error: " + (data.error || "unknown");
+      }
+    } catch(e){
+      balanceEl.textContent = "—";
+      updatedEl.textContent = "—";
+      statusEl.textContent = "MISSING SNAPSHOT";
+      statusEl.className = "bad";
+      whyEl.style.display = "block";
+      whyEl.textContent = "burn.json not found yet. Run the GitHub Action once to generate it.";
     }
   }
 
-  return { totalUi, accountsCount };
-}
-
-function fmt(n) {
-  if (n === 0) return "0";
-  if (n >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  if (n >= 1) return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
-  return n.toLocaleString(undefined, { maximumFractionDigits: 8 });
-}
-
-function setText(id, v) { document.getElementById(id).textContent = v; }
-
-async function tick() {
-  const status = document.getElementById("status");
-  const rateNote = document.getElementById("rateNote");
-  try {
-    status.textContent = "Fetching…";
-    rateNote.textContent = "";
-
-    const { totalUi, accountsCount } = await fetchBurnBalance();
-
-    setText("balance", fmt(totalUi));
-    setText("updated", new Date().toLocaleString());
-    status.textContent = `OK (token entries: ${accountsCount})`;
-  } catch (e) {
-    status.textContent = `Error: ${e.message}`;
-  }
-}
-
-(function init(){
-  setText("burnWallet", BURN_WALLET);
-  setText("tokenMint", TOKEN_MINT);
-  document.getElementById("walletLink").href = `${EXPLORER_BASE}/account/${BURN_WALLET}`;
-  document.getElementById("mintLink").href = `${EXPLORER_BASE}/token/${TOKEN_MINT}`;
-  setText("rpc", "Solscan API (via AllOrigins)");
-  setText("refresh", `${Math.round(POLL_MS/1000)}s`);
-
-  tick();
-  setInterval(tick, POLL_MS);
-})();
+  loadSnapshot();
 </script>
 </body>
 </html>
