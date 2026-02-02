@@ -61,7 +61,7 @@
  * === OPTION 1 (FREE) CONFIG ===
  * Public RPC + slower polling to reduce rate limits.
  */
-const RPC_HTTP = "https://solana.public-rpc.com";
+setText("rpc", "Solscan API (proxied)");
 const BURN_WALLET = "1nc1nerator11111111111111111111111111111111";
 const TOKEN_MINT  = "At4L287tND4vLSURFeVz2fqhbvNgnE76nfFg7gy9pump";
 const POLL_MS     = 20000; // 20s is safer on free public RPC
@@ -71,11 +71,12 @@ const EXPLORER_BASE = "https://solscan.io";
  * JSON-RPC helper
  */
 async function fetchBurnBalance() {
-  const url = `https://public-api.solscan.io/account/tokens?account=${BURN_WALLET}`;
-  const res = await fetch(url, {
-    headers: { accept: "application/json" }
-  });
+  const targetUrl = `https://public-api.solscan.io/account/tokens?account=${BURN_WALLET}`;
+  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+
+  const res = await fetch(proxyUrl);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
   const data = await res.json();
 
   let totalUi = 0;
@@ -86,6 +87,10 @@ async function fetchBurnBalance() {
       totalUi += Number(t.tokenAmount.uiAmount || 0);
       accountsCount++;
     }
+  }
+
+  return { totalUi, accountsCount };
+}
   }
 
   return { totalUi, accountsCount };
