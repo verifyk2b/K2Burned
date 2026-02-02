@@ -60,8 +60,8 @@
 /**
  * === OPTION 1 (FREE) CONFIG ===
  * Public RPC + slower polling to reduce rate limits.
- */
-setText("rpc", "Solscan API (proxied)");
+ *
+const POLL_MS = 30000;
 const BURN_WALLET = "1nc1nerator11111111111111111111111111111111";
 const TOKEN_MINT  = "At4L287tND4vLSURFeVz2fqhbvNgnE76nfFg7gy9pump";
 const POLL_MS     = 20000; // 20s is safer on free public RPC
@@ -151,8 +151,8 @@ async function tick() {
   setText("tokenMint", TOKEN_MINT);
   document.getElementById("walletLink").href = `${EXPLORER_BASE}/account/${BURN_WALLET}`;
   document.getElementById("mintLink").href = `${EXPLORER_BASE}/token/${TOKEN_MINT}`;
-  setText("rpc", RPC_HTTP);
-  setText("refresh", `${Math.round(POLL_MS/1000)}s`);
+  setText("rpc", "Solscan API (proxied)");
+  setText("refresh", `${Math.round(POLL_MS/1000)}s`)
 
   tick();
   setInterval(tick, POLL_MS);
