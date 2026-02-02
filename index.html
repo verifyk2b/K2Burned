@@ -27,12 +27,12 @@
     <div class="row">
       <div class="kpi">
         <div class="label">Burn wallet</div>
-        <div class="value" id="burnWallet"></div>
+        <div class="value" id="burnWallet">—</div>
         <div class="muted"><a id="walletLink" target="_blank" rel="noreferrer">View on Solscan</a></div>
       </div>
       <div class="kpi">
         <div class="label">Token mint</div>
-        <div class="value" id="tokenMint"></div>
+        <div class="value" id="tokenMint">—</div>
         <div class="muted"><a id="mintLink" target="_blank" rel="noreferrer">View mint on Solscan</a></div>
       </div>
       <div class="kpi">
@@ -51,24 +51,32 @@
 
     <div class="muted">
       Config:
-      <div>RPC: <code id="rpc"></code></div>
-      <div>Refresh: <code id="refresh"></code></div>
+      <div>Data: <code id="rpc">—</code></div>
+      <div>Refresh: <code id="refresh">—</code></div>
     </div>
   </div>
 
 <script>
 /**
- * === OPTION 1 (FREE) CONFIG ===
- * Public RPC + slower polling to reduce rate limits.
- *
-const POLL_MS = 30000;
+ * === CONFIG ===
+ * Mint: K2B
+ * Burn wallet: Solana Incinerator
+ */
 const BURN_WALLET = "1nc1nerator11111111111111111111111111111111";
 const TOKEN_MINT  = "At4L287tND4vLSURFeVz2fqhbvNgnE76nfFg7gy9pump";
-const POLL_MS     = 20000; // 20s is safer on free public RPC
+const POLL_MS     = 20000; // 20s
 const EXPLORER_BASE = "https://solscan.io";
 
 /**
- * JSON-RPC helper
+ * If anything breaks, show the error on the page (mobile-friendly).
+ */
+window.addEventListener("error", (e) => {
+  const status = document.getElementById("status");
+  if (status) status.textContent = `JS Error: ${e.message}`;
+});
+
+/**
+ * Browser-safe fetch via CORS proxy -> Solscan public API.
  */
 async function fetchBurnBalance() {
   const targetUrl = `https://public-api.solscan.io/account/tokens?account=${BURN_WALLET}`;
@@ -83,38 +91,13 @@ async function fetchBurnBalance() {
   let accountsCount = 0;
 
   for (const t of data) {
-    if (t.tokenAddress === TOKEN_MINT) {
-      totalUi += Number(t.tokenAmount.uiAmount || 0);
+    if (t && t.tokenAddress === TOKEN_MINT) {
+      totalUi += Number(t.tokenAmount?.uiAmount || 0);
       accountsCount++;
     }
   }
 
   return { totalUi, accountsCount };
-}
-  }
-
-  return { totalUi, accountsCount };
-}
-
-/**
- * Fetch burn wallet token balance (sum of all token accounts for this mint).
- * Uses getTokenAccountsByOwner with mint filter.
- */
-async function fetchBurnBalance() {
-  const result = await rpc("getTokenAccountsByOwner", [
-    BURN_WALLET,
-    { mint: TOKEN_MINT },
-    { encoding: "jsonParsed" }
-  ]);
-
-  let totalUi = 0;
-  const accounts = result?.value || [];
-  for (const acc of accounts) {
-    const parsed = acc?.account?.data?.parsed;
-    const uiAmt = parsed?.info?.tokenAmount?.uiAmount;
-    if (typeof uiAmt === "number") totalUi += uiAmt;
-  }
-  return { totalUi, accountsCount: accounts.length };
 }
 
 function fmt(n) {
@@ -137,12 +120,9 @@ async function tick() {
 
     setText("balance", fmt(totalUi));
     setText("updated", new Date().toLocaleString());
-    status.textContent = `OK (token accounts: ${accountsCount})`;
+    status.textContent = `OK (token entries: ${accountsCount})`;
   } catch (e) {
     status.textContent = `Error: ${e.message}`;
-    if (String(e.message).includes("429")) {
-      rateNote.textContent = " Rate-limited. Increase refresh interval (POLL_MS) to 30–60s.";
-    }
   }
 }
 
@@ -151,8 +131,8 @@ async function tick() {
   setText("tokenMint", TOKEN_MINT);
   document.getElementById("walletLink").href = `${EXPLORER_BASE}/account/${BURN_WALLET}`;
   document.getElementById("mintLink").href = `${EXPLORER_BASE}/token/${TOKEN_MINT}`;
-  setText("rpc", "Solscan API (proxied)");
-  setText("refresh", `${Math.round(POLL_MS/1000)}s`)
+  setText("rpc", "Solscan API (via AllOrigins)");
+  setText("refresh", `${Math.round(POLL_MS/1000)}s`);
 
   tick();
   setInterval(tick, POLL_MS);
