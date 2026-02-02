@@ -70,16 +70,25 @@ const EXPLORER_BASE = "https://solscan.io";
 /**
  * JSON-RPC helper
  */
-async function rpc(method, params) {
-  const res = await fetch(RPC_HTTP, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
+async function fetchBurnBalance() {
+  const url = `https://public-api.solscan.io/account/tokens?account=${BURN_WALLET}`;
+  const res = await fetch(url, {
+    headers: { accept: "application/json" }
   });
-  if (!res.ok) throw new Error(`RPC HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message || "RPC error");
-  return data.result;
+
+  let totalUi = 0;
+  let accountsCount = 0;
+
+  for (const t of data) {
+    if (t.tokenAddress === TOKEN_MINT) {
+      totalUi += Number(t.tokenAmount.uiAmount || 0);
+      accountsCount++;
+    }
+  }
+
+  return { totalUi, accountsCount };
 }
 
 /**
